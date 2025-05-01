@@ -1,51 +1,47 @@
 cmake_minimum_required(VERSION 3.16)
+project(KrkrVoice VERSION 1.00)
 
-# プロジェクト名とバージョン
-set(PROJECT_NAME KrkrVoice)
-set(PROJECT_VERSION 1.00)
-
-project(${PROJECT_NAME} VERSION ${PROJECT_VERSION})
-
-# ソースファイル
-set(SOURCES
-    src/main.cpp
-    src/krkrsapi.cpp
-)
-
-# ヘッダーファイル（.h や .hpp）をグロブで指定
-file(GLOB HEADERS "src/*.h" "src/*.hpp")
-
-# UTF-8 ソースコード対応 (MSVC専用)
-add_compile_options("$<$<AND:$<C_COMPILER_ID:MSVC>,$<COMPILE_LANGUAGE:C>>:/utf-8>")
-add_compile_options("$<$<AND:$<CXX_COMPILER_ID:MSVC>,$<COMPILE_LANGUAGE:CXX>>:/utf-8>")
-add_compile_options("$<$<AND:$<CXX_COMPILER_ID:MSVC>,$<COMPILE_LANGUAGE:CXX>>:/Zc:__cplusplus>")
-
-# MSVCのスタティックランタイム使用設定 (/MT または /MTd)
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-
-# コマンドライン引数を取得してEXEかDLLかを切り替え
+# ── ビルド種別オプション ───────────────────────────────
 option(BUILD_EXE "Build executable instead of library" OFF)
 
+# ── 共通 / 個別ソース ────────────────────────────────
+set(COMMON_SRC  src/krkrvoice.cpp  src/krkrvoice_win.cpp)
 if(BUILD_EXE)
-    # EXEを作成
-    add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
+    list(APPEND COMMON_SRC src/main.cpp)
 else()
-    # DLLを作成
-    add_library(${PROJECT_NAME} SHARED ${SOURCES} ${HEADERS})
+    list(APPEND COMMON_SRC src/plugin.cpp)
+endif()
+file(GLOB HEADERS "src/*.h" "src/*.hpp")
+
+# ── ncbind サブディレクトリ ───────────────────────────
+add_subdirectory(../ncbind ${CMAKE_CURRENT_BINARY_DIR}/ncbind)
+
+# ── ターゲット作成 ───────────────────────────────────
+if(BUILD_EXE)
+    add_executable(KrkrVoice ${COMMON_SRC} ${HEADERS})
+else()
+    add_library   (KrkrVoice SHARED ${COMMON_SRC} ${HEADERS})
 endif()
 
-# ncbind がターゲットとしてまだ追加されていない場合
-if(NOT TARGET ncbind)
-    add_subdirectory(../ncbind ${CMAKE_CURRENT_BINARY_DIR}/ncbind)
+target_link_libraries(KrkrVoice PUBLIC ncbind winmm)
+
+# ── ランタイムを “ターゲット単位” で振り分ける ──────
+if(BUILD_EXE)
+    # EXE → /MT or /MTd
+    set_property(TARGET KrkrVoice
+                 PROPERTY MSVC_RUNTIME_LIBRARY
+                 "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+else()
+    # DLL → /MD or /MDd
+    set_property(TARGET KrkrVoice
+                 PROPERTY MSVC_RUNTIME_LIBRARY
+                 "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
-# ncbind ライブラリをリンク
-target_link_libraries(${PROJECT_NAME} PUBLIC
-    ncbind
-)
+# （サブディレクトリの ncbind / tp_stub も同じ規則にしたい場合は
+#  target_link_libraries 後に同様の set_property() を追加で呼ぶ）
 
-# （オプション）C++17 設定
-set_target_properties(${PROJECT_NAME} PROPERTIES
-    CXX_STANDARD 17
-    CXX_STANDARD_REQUIRED YES
-)
+# ── 共通のコンパイルオプションなど ──────────────────
+target_compile_features(KrkrVoice PUBLIC cxx_std_17)
+target_compile_options(KrkrVoice PRIVATE
+    "$<$<CXX_COMPILER_ID:MSVC>:/utf-8;/Zc:__cplusplus>")
