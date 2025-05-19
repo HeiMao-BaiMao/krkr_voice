@@ -14,7 +14,10 @@ endif()
 file(GLOB HEADERS "src/*.h" "src/*.hpp")
 
 # ── ncbind サブディレクトリ ───────────────────────────
-add_subdirectory(../ncbind ${CMAKE_CURRENT_BINARY_DIR}/ncbind)
+if (NOT TARGET ncbind)
+    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../ncbind
+                     ${CMAKE_CURRENT_BINARY_DIR}/ncbind)
+endif() これでいいの?
 
 # ── ターゲット作成 ───────────────────────────────────
 if(BUILD_EXE)
