@@ -16,8 +16,8 @@ file(GLOB HEADERS "src/*.h" "src/*.hpp")
 # ── ncbind サブディレクトリ ───────────────────────────
 if (NOT TARGET ncbind)
     add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../ncbind
-                     ${CMAKE_CURRENT_BINARY_DIR}/ncbind)
-endif() これでいいの?
+    ${CMAKE_CURRENT_BINARY_DIR}/ncbind)
+endif()
 
 # ── ターゲット作成 ───────────────────────────────────
 if(BUILD_EXE)
