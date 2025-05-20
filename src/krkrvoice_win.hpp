@@ -1,21 +1,24 @@
 #pragma once
 #include "krkrvoice.hpp"
-#include <functional> 
+#include <functional>
 
-namespace krkrvoice {
+namespace krkrvoice
+{
 
-// SAPI + WinRT をまとめて扱うサービス
-class WinTTSService final : public ITTSService {
-public:
-    std::vector<VoiceInfo>
-    GetVoiceList(const std::wstring& lang = L"", const std::wstring& gender = L"") override;
+    // SAPI + WinRT をまとめて扱うサービス
+    class WinTTSService final : public ITTSService
+    {
+    public:
+        std::vector<VoiceInfo>
+        GetVoiceList(const std::wstring &lang = L"", const std::wstring &gender = L"") override;
 
-    bool SpeakText(const VoiceInfo& voice,
-        const std::wstring& text,
-        int  speed,
-        bool sync,
-        bool overlap,
-        std::function<void()> onFinish = {});
-};
+        bool SpeakText(const VoiceInfo &voice,
+                       const std::wstring &text,
+                       int speed,
+                       bool sync,
+                       bool overlap,
+                       std::function<void()> onFinish = {},
+                       std::shared_ptr<std::atomic_bool> cancelFlag = nullptr);
+    };
 
 } // namespace krkrvoice
